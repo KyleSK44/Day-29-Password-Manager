@@ -1,6 +1,20 @@
 from tkinter import *
 from tkinter import messagebox
-import random, pyperclip
+import random, pyperclip, json
+# ---------------------------- Password Search------------------------------- #
+def search():
+
+    with open('passwords.json','r') as jfile:
+        data = json.load(jfile)
+
+        try:
+            messagebox.showinfo(title=web_entry.get(), message=f'Username = {data[web_entry.get()]["email"]}\n'
+                                                               f'password = {data[web_entry.get()]["password"]}')
+        except KeyError:
+            messagebox.showerror(message="Entry Not Found")
+        except FileNotFoundError:
+            messagebox.showerror(message="There are currently no accounts stored")
+
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate():
@@ -33,17 +47,34 @@ def generate():
 
 
 def add():
-
+    new_data = {
+        web_entry.get():{
+            "email": email_entry.get(),
+            "password": password_entry.get()
+        }
+    }
     if len(password_entry.get()) == 0 or len(web_entry.get()) == 0 or len(email_entry.get()) == 0:
         messagebox.showerror(message=" One or more of the fields is blank")
 
+        # is_ok = messagebox.askokcancel(title=web_entry.get(),
+        #                                message=f"Data entered: \nEmail: {email_entry.get()} \nPassword: "
+        #                                        f"{password_entry.get()} \nIs This Correct? ")
     else:
-        is_ok = messagebox.askokcancel(title=web_entry.get(),
-                                       message=f"Data entered: \nEmail: {email_entry.get()} \nPassword: "
-                                               f"{password_entry.get()} \nIs This Correct? ")
-        if is_ok:
-            with open('passwords.txt','a') as pfile:
-                pfile.write(f"{web_entry.get()} | {email_entry.get()} | {password_entry.get()} \n")
+        try:
+            with open('passwords.json','r') as jfile:
+            #pfile.write(f"{web_entry.get()} | {email_entry.get()} | {password_entry.get()} \n")
+                data = json.load(jfile)
+        except FileNotFoundError:
+            with open("passwords.json", 'w') as goober:
+                json.dump(new_data, goober, indent=4)
+        else:
+            with open("passwords.json", 'w') as jfile:
+                  # loads json data to variable data
+                data.update(new_data)  # updates data with new_data
+                # if new_data has a duplicate website name, the data for the website will be updated, a new entry will NOT be added
+                json.dump(data, jfile, indent=4)
+
+        finally:
             pyperclip.copy(password_entry.get())
             web_entry.delete(0, END)
             password_entry.delete(0, END)
@@ -65,8 +96,8 @@ canvas.grid(column=1, row=0)
 lab1 = Label(text="Website:")
 lab1.grid(column=0, row=1)
 
-web_entry = Entry(width=52)
-web_entry.grid(column=1, row=1, columnspan=2)
+web_entry = Entry(width=33)
+web_entry.grid(column=1, row=1, columnspan=1)
 
 lab2 = Label(text="Email/Username:")
 lab2.grid(column=0, row=2)
@@ -84,8 +115,11 @@ password_entry.grid(column=1, row=3)
 password_button = Button(text="Generate Password", command=generate)
 password_button.grid(column=2, row=3)
 
+search_button = Button(text="Search" , command = search, width=14)
+search_button.grid(column=2, row=1)
+
 add_button = Button(text="Add", command = add, width=44)
 add_button.grid(column=1, row=4, columnspan=2)
 
-#22323
+
 window.mainloop()
